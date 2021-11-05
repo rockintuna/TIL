@@ -119,3 +119,62 @@ fastcgi.conf  koi-utf         mime.types  modules-enabled    proxy_params  sites
 $ vi nginx.conf 
 ```
 
+**요청을 인터셉트하고 실제 서버로 전달하도록 설정하기.**
+Nginx의  config 파일은 디렉티브와 컨텍스트로 이루어져 있다.
+컨텍스트는 `http {}`와 같이 블록 형태로 구성되며 디렉티브는 이런 컨텍스트들 안 또는 밖에 있는 `;`으로 끝나는 설정 키-값 들이다.
+유심히 봐야할 컨텍스트는 웹 트래픽 처리를 담당하는 http 컨텍스트이다.
+
+```bash
+http {
+				include /etc/nginx/conf.d/*.conf;
+        include /etc/nginx/sites-enabled/*;
+
+        server {
+                      listen 80;
+          server_name MyHost; #MyHost에는 나의 서버 주소를 설정한다.
+
+                      location / {
+                              proxy_pass http://localhost:8080;
+                }
+        }
+}
+```
+
+Nginx 재시작
+
+```bash
+sudo service nginx restart
+```
+
+이후로는 80포트 요청이 Nginx 웰컴 페이지 대신 8080 포트에 띄운 나의 어플리케이션으로 리다이렉트 된다.
+
+
+
+Nginx가 **동적으로 Proxy Pass를 변경**할수 있도록 설정하기.
+
+```
+	include /etc/nginx/conf.d/service-url.inc;
+	
+	server {
+                listen 80;
+		server_name MyHost;	
+
+                location / {
+                        proxy_pass $service_url;
+        	}
+	}
+
+```
+
+이제부터는 Nginx가 /etc/nginx/conf.d/service-url.inc 파일의 service_url을 읽어서 동적으로 프록시 패스가 변경될 수 있다.
+
+```bash
+vi /etc/nginx/conf.d/service-url.inc
+```
+
+```bash
+set $service_url http://127.0.0.1:8080;
+```
+
+
+
