@@ -109,7 +109,7 @@ target     prot opt source               destination
 
 ![image-20211102182130631](image-20211102182130631.png)
 
-Nginx 설정 파일
+#### Nginx 설정 파일
 
 ```bash
 $ cd /etc/nginx/
@@ -130,15 +130,27 @@ http {
         include /etc/nginx/sites-enabled/*;
 
         server {
-                      listen 80;
-          server_name MyHost; #MyHost에는 나의 서버 주소를 설정한다.
+                  listen 80;
+          										server_name MyHost; #MyHost에는 요청을 받을 도메인을 설정한다.
 
-                      location / {
+                  location / {
                               proxy_pass http://localhost:8080;
-                }
-        }
+                	}
+                	location /test {
+                              proxy_pass http://localhost:8080/show;
+                	}
+        	}
 }
 ```
+
+**server_name** 디렉티브는 도메인(domains)을 설정한다. 하나의 IP 주소에 대해 여러개의 도메인을 설정할 수도 있다.
+**location** 디렉티브는 서버 안의 리소스에 대한 여러 요청을 어떻게 응답해야 할지를 설정한다. 
+
+- location 디렉티브에서 블록이 시작되기 전 나오는 주소는 호스트 주소 뒤에 오는 리터럴 스트링을 매칭한다.
+- `/`라고 적으면 모든 `/`요청과 매칭되며, 실제 요청의  `/` 뒤에 오는 스트링은 서버 요청으로 넘겨준다.
+  (ex) MyHost/home => http://localhost:8080/home
+- 여러  location과 매칭되는 요청이 들어온다면 가장 구체적인 location이 선택된다.
+  (ex) MyHost/test => http://localhost:8080/show
 
 Nginx 재시작
 
@@ -150,20 +162,27 @@ sudo service nginx restart
 
 
 
-Nginx가 **동적으로 Proxy Pass를 변경**할수 있도록 설정하기.
+#### Nginx가 동적으로 Proxy Pass를 변경할 수 있도록 설정하기.
 
-```
-	include /etc/nginx/conf.d/service-url.inc;
-	
-	server {
-                listen 80;
-		server_name MyHost;	
+upstream 
 
-                location / {
-                        proxy_pass $service_url;
-        	}
+```bash
+	upstream app1 {
+		server 127.0.0.1:8080;
+		keepalive 32;
 	}
-
+	upstream app2 {
+		server 127.0.0.1:8082;
+		keepalive 32;
+	}
+	server {
+		include /etc/nginx/conf.d/service-set.inc;
+		listen 80;
+		server_name MyHost;
+		location / {
+			proxy_pass $service_set;
+		}
+	}
 ```
 
 이제부터는 Nginx가 /etc/nginx/conf.d/service-url.inc 파일의 service_url을 읽어서 동적으로 프록시 패스가 변경될 수 있다.
@@ -178,3 +197,7 @@ set $service_url http://127.0.0.1:8080;
 
 
 
+저희가 시도해볼만한 DB 쿼리 생성 방법이 JPA 쿼리 메서드, JPQL, QueryDSL 3가지인 것 같습니다.
+혹시 현업에서는 모든 쿼리를 하나로 통일하는지 
+아니면 사용에 따라 간단한 쿼리는 쿼리 메서드, 복잡한 쿼리는 QueryDSL로 쓰는 것 처럼 복합적으로 사용하는지
+JPQL, QueryDSL 
