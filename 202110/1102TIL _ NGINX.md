@@ -217,7 +217,7 @@ vi /etc/nginx/conf.d/service-url.inc
 ```
 
 ```bash
-set $service_url http://127.0.0.1:8080;
+set $service_url http://app1;
 ```
 
 이제부터는 Nginx가 /etc/nginx/conf.d/service-url.inc 파일의 $service_url 변수를 읽어서 프록시 패스에 입력한다.
@@ -386,6 +386,39 @@ do
 done
 
 
+```
+
+switch.sh
+
+```bash
+#!/bin/bash
+
+# 쉬고 있는 app 찾기: app1이 사용중이면 app2가 쉬고 있고, 반대면 app1이 쉬고 있음
+echo "> 현재 구동중인 App 확인"
+CURRENT_PROFILE=`curl -s http://localhost/profile`
+echo "> Current Profile: $CURRENT_PROFILE"
+
+if [ $CURRENT_PROFILE == app1 ]
+then
+  IDLE_PROFILE=app2
+  IDLE_PORT=8082
+elif [ $CURRENT_PROFILE == app2 ]
+then
+  IDLE_PROFILE=app1
+  IDLE_PORT=8081
+else
+  echo "> 일치하는 Profile이 없습니다. Profile: $CURRENT_PROFILE"
+  echo "> app1을 할당합니다. IDLE_PROFILE: app1"
+  IDLE_PROFILE=app1
+  IDLE_PORT=8081
+fi
+echo "> 전환할 Profile: $IDLE_PROFILE"
+echo "> 전환할 Port: $IDLE_PORT"
+echo "> Port 전환"
+echo "set \$service_url http://${IDLE_PROFILE};" | sudo tee /etc/nginx/conf.d/service-url.inc
+
+echo "> 엔진엑스 Reload"
+sudo service nginx reload
 ```
 
 
